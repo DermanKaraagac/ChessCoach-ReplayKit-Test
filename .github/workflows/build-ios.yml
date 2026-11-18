@@ -41,10 +41,10 @@ jobs:
           # This is needed for iOS installation to create the extension placeholder.
           for PLIST in "$APP/Info.plist" "$APP/PlugIns/BroadcastExtension.appex/Info.plist"; do
             test -f "$PLIST"
-            /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 1.0.0' "$PLIST" || \
-              /usr/libexec/PlistBuddy -c 'Add :CFBundleShortVersionString string 1.0.0' "$PLIST"
-            /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 1' "$PLIST" || \
-              /usr/libexec/PlistBuddy -c 'Add :CFBundleVersion string 1' "$PLIST"
+            /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 3.0.0' "$PLIST" || \
+              /usr/libexec/PlistBuddy -c 'Add :CFBundleShortVersionString string 3.0.0' "$PLIST"
+            /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 3' "$PLIST" || \
+              /usr/libexec/PlistBuddy -c 'Add :CFBundleVersion string 3' "$PLIST"
             echo "Validated metadata for $PLIST"
             /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST"
             /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST"
