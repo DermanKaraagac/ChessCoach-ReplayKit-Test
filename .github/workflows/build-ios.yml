@@ -1,0 +1,51 @@
+name: Build unsigned Chess Coach IPA
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ChessCoach/**'
+      - 'BroadcastExtension/**'
+      - 'project.yml'
+      - '.github/workflows/build-ios.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show toolchain
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: xcodegen generate --spec project.yml
+      - name: Build unsigned device application and extension
+        run: |
+          set -euo pipefail
+          xcodebuild -project ChessCoach.xcodeproj \
+            -scheme ChessCoach \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build
+      - name: Create unsigned IPA, validate extension is embedded
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/ChessCoach.app"
+          test -d "$APP"
+          test -d "$APP/PlugIns/BroadcastExtension.appex"
+          /usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' \
+            "$APP/PlugIns/BroadcastExtension.appex/Info.plist"
+          mkdir -p out/Payload
+          cp -R "$APP" out/Payload/
+          (cd out && zip -qry ../ChessCoach-unsigned.ipa Payload)
+          unzip -l ChessCoach-unsigned.ipa | grep 'BroadcastExtension.appex'
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChessCoach-unsigned-IPA
+          path: ChessCoach-unsigned.ipa
+          if-no-files-found: error
