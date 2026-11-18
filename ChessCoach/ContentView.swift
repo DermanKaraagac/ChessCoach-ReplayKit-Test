@@ -3,37 +3,51 @@ import ReplayKit
 import UserNotifications
 
 struct ContentView: View {
-    @State private var notificationStatus = "Meldingen zijn nog niet ingeschakeld"
-
+    @State private var status = "Nog niet gecontroleerd"
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkerboard.rectangle").font(.system(size: 54))
-            Text("Chess Coach V2").font(.largeTitle.bold())
-            Text("Realtime bordactiviteit — diagnostische test").font(.headline)
-                .multilineTextAlignment(.center)
-            Text("Deze versie onderzoekt lokaal de 64 vakjes van een schermstream. Er wordt nog geen schaakzet gevalideerd of Stockfish gebruikt.")
-                .multilineTextAlignment(.center)
-
-            Button("1. Meldingen toestaan") {
-                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge]) { granted, error in
-                    DispatchQueue.main.async {
-                        notificationStatus = error?.localizedDescription ?? (granted ? "Meldingen toegestaan" : "Meldingen geweigerd")
-                    }
+        ScrollView {
+            VStack(spacing: 16) {
+                Image(systemName: "checkerboard.rectangle").font(.system(size: 48))
+                Text("Chess Coach V3").font(.largeTitle.bold())
+                Text("Diagnose: meldingen → frames → borduitsnede")
+                    .font(.headline).multilineTextAlignment(.center)
+                Button("1. Meldingen toestaan / status controleren") { checkPermission() }
+                    .buttonStyle(.borderedProminent)
+                Text(status).font(.footnote).multilineTextAlignment(.center)
+                Button("2. Stuur testmelding over 5 seconden") { testNotification() }
+                    .buttonStyle(.bordered)
+                Text("Verlaat na deze knop de app. Als de testmelding niet verschijnt: controleer Instellingen → Meldingen → Chess Coach, en Focus.")
+                    .font(.footnote).multilineTextAlignment(.center)
+                Text("3. Start schermuitzending:")
+                BroadcastPicker().frame(width: 65, height: 65)
+                Text("4. Open een toegestane oefenpartij. Verwachte diagnosemeldingen: uitzending gestart, ≥30 videoframes, beeld verwerkt; daarna eventueel bordactiviteit.")
+                    .multilineTextAlignment(.center)
+                Text("Let op: meldingen vanuit een broadcast-extensie kunnen door iOS worden beperkt. Geen melding is dus niet automatisch bewijs dat er geen frames zijn. Deze app verstuurt of bewaart geen schermbeelden.")
+                    .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            }.padding(22)
+        }
+    }
+    private func checkPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                DispatchQueue.main.async {
+                    status = "Toestemming: \(granted ? "ja" : "nee"), statuscode: \(settings.authorizationStatus.rawValue)" + (error.map { ", fout: \($0.localizedDescription)" } ?? "")
                 }
             }
-            .buttonStyle(.borderedProminent)
-            Text(notificationStatus).font(.caption).foregroundStyle(.secondary)
-
-            Text("2. Start schermuitzending:")
-            BroadcastPicker().frame(width: 65, height: 65)
-
-            Text("3. Open een oefenpartij tegen een bot. Speel een zet en controleer of je een melding over veranderde vakjes krijgt. Stop de uitzending via het iOS-menu.")
-                .multilineTextAlignment(.center)
-
-            Text("Vaste uitsnede: iPhone 14 Pro, portret, Chess.com-bord op de locatie van je oorspronkelijke kalibratie. Foutieve detecties zijn mogelijk; geen beelden worden verzonden.")
-                .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }
-        .padding(22)
+    }
+    private func testNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Chess Coach V3: testmelding"
+        content.body = "Meldingen vanuit de hoofdapp werken."
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content,
+                                            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false))
+        UNUserNotificationCenter.current().add(request) { error in
+            DispatchQueue.main.async {
+                status = error.map { "Testmelding fout: \($0.localizedDescription)" } ?? "Testmelding gepland: verlaat nu de app."
+            }
+        }
     }
 }
 
