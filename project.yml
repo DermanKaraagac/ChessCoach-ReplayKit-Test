@@ -1,0 +1,43 @@
+name: ChessCoach
+options:
+  bundleIdPrefix: org.example
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    IPHONEOS_DEPLOYMENT_TARGET: '16.0'
+    TARGETED_DEVICE_FAMILY: '1'
+    CODE_SIGNING_ALLOWED: 'NO'
+    GENERATE_INFOPLIST_FILE: 'YES'
+targets:
+  ChessCoach:
+    type: application
+    platform: iOS
+    sources:
+      - path: ChessCoach
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.example.chesscoach.practice
+        INFOPLIST_KEY_CFBundleDisplayName: Chess Coach
+        INFOPLIST_KEY_UILaunchScreen_Generation: 'YES'
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: 'YES'
+    dependencies:
+      - target: BroadcastExtension
+        embed: true
+  BroadcastExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: BroadcastExtension/SampleHandler.swift
+    info:
+      path: BroadcastExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Chess Coach Broadcast
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.broadcast-services-upload
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SampleHandler
+          NSExtensionAttributes:
+            RPBroadcastProcessMode: RPBroadcastProcessModeSampleBuffer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.example.chesscoach.practice.BroadcastExtension
+        SKIP_INSTALL: 'YES'
